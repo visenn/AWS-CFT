@@ -1,0 +1,108 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "CloudFormation Template creating AWS role Report and AWS user Report. The role can be assumed only from that user and only from defined IP number or defined set of IP numbers. This template by design is not generating any access keys as publishing secret key in the CloudFormation output is insecure.",
+  "Parameters" : {
+    "Subnets": {
+      "Type": "String",
+      "Description" : "Provide IP address or list of subnets from which AWS user can be accessed",
+	  "Default" : "192.168.1.123/32"
+    },
+	"UserName" : {
+	  "Type": "String",
+      "Description" : "Provide the user name",
+	  "Default" : "Report"
+	}
+  },
+
+  "Resources" : {
+    "ReportUserPolicy" : {
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+        "PolicyName" : "ReportUserPolicy",
+		"Users" : [ { "Ref" : "ReportUser" } ],
+        "PolicyDocument" : {
+          "Statement": [{
+            "Effect"   : "Allow",
+            "Action"   : [ "sts:AssumeRole" ],
+            "Resource" : { "Fn::Join" : [ "", [ 
+				"arn:aws:iam::",
+				{ "Ref" : "AWS::AccountId" },
+				":role/",
+				{ "Ref" : "UserName" }
+			] ] }
+          }]
+        }
+      }
+    },
+	
+	"ReportRolePolicy" : {
+		"Type" : "AWS::IAM::ManagedPolicy",
+		"Properties" : {
+			"Description" : "Report role policy allowing to report EC2 instances, volumes and images properties",
+			"Path" : "/",
+			"ManagedPolicyName" : "ReportRolePolicy",
+			"Roles" : [ { "Ref" : "ReportRole" } ],
+			"PolicyDocument" : {
+				"Version":"2012-10-17",
+				"Statement" : {
+				"Effect" : "Allow",
+                  "Action" : [
+					"ec2:DescribeInstances",
+					"ec2:DescribeVolumes",
+					"ec2:DescribeImages"
+				  ],
+                  "Resource" : "*"
+				}
+              }
+            }
+    },
+	
+	"ReportUser" : {
+      "Type" : "AWS::IAM::User",
+	  "Properties" : {
+	    "UserName": { "Ref": "UserName" }
+	  }
+    },
+	
+	"ReportRole" : {
+      "Type" : "AWS::IAM::Role",
+	  "DependsOn"	: "ReportUser",
+	  "Properties" : {
+	    "RoleName": { "Ref": "UserName" },
+		"AssumeRolePolicyDocument": {
+		  "Version":"2012-10-17",
+          "Statement": [{
+            "Effect"   : "Allow",
+            "Principal": { "AWS" : { "Fn::Join" : [ "", [ 
+				"arn:aws:iam::",
+				{ "Ref" : "AWS::AccountId" },
+				":user/",
+				{ "Ref" : "UserName" }
+			] ] }},
+            "Action" : "sts:AssumeRole"
+          },
+		  {
+			"Effect"	: "Deny",
+			"Principal": { "AWS" : { "Fn::Join" : [ "", [ 
+				"arn:aws:iam::",
+				{ "Ref" : "AWS::AccountId" },
+				":user/",
+				{ "Ref" : "UserName" }
+			] ] }},
+			"Action" : "sts:AssumeRole",
+			"Condition" : {
+				"NotIpAddress": {
+					"aws:SourceIp": [
+						{ "Ref": "Subnets" }
+					]
+				}
+			}
+		  }
+		  ]
+        }
+		
+	  }
+    }
+  }
+}
