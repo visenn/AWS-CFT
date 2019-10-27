@@ -14,7 +14,8 @@ The puerpose of this repository is to provide the set of example AWS Cloud Forma
     role_arn = arn:aws:iam::MasterAccountID:role/Report
     </pre>
     What is important, the configuration of the Report AWS user created by this template allows him to be also the central AWS user for communication with the similar roles in the other accounts, with the same IP access restrictions.
-  </li><b>IAM-role-assumed-by-master-account-user</b><br>
+  </li>
+  <li><b>IAM-role-assumed-by-master-account-user</b><br>
   In opposite to the previous template, this template creates only Report role. This template shouldn't be used alone. It should be used only in the AWS multi-account organization where to one AWS account there is deployed template described in the previous point and in all other AWS accounts there will be deployed this template. <br>
   The profile in the credentials file should look like follows:<br>
   <pre>
@@ -25,6 +26,5 @@ The puerpose of this repository is to provide the set of example AWS Cloud Forma
     role_arn = arn:aws:iam::ChildAccount1ID:role/Report
   </pre>
   What is worth to remember - while ARN of the role required to define this profile is the ARN of the role created by this template, then access_key_id and secret_access_key has to be copied from the MasterAccount environment where user Report was created. 
-  <li>
-  </li<
+  </li>
 </ol>
