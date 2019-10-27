@@ -15,6 +15,7 @@ The puerpose of this repository is to provide the set of example AWS Cloud Forma
     </pre>
     What is important, the configuration of the Report AWS user created by this template allows him to be also the central AWS user for communication with the similar roles in the other accounts, with the same IP access restrictions.
   </li>
+  <br><br>
   <li><b>IAM-role-assumed-by-master-account-user</b><br>
   In opposite to the previous template, this template creates only Report role. This template shouldn't be used alone. It should be used only in the AWS multi-account organization where to one AWS account there is deployed template described in the previous point and in all other AWS accounts there will be deployed this template. <br>
   The profile in the credentials file should look like follows:<br>
