@@ -1,0 +1,87 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "CloudFormation Template creating AWS role granting ReportUser from master account to execute EC2 describe functions. The role can be assumed only from that user and only from defined set of of subnets",
+  "Parameters" : {
+    "Subnets": {
+      "Type": "String",
+      "Description" : "Provide list of subnet from which AWS user can be accessed",
+	  "Default" : "192.168.1.123/32"
+    },
+	"MasterAccountId" : {
+	  "Type": "String",
+      "Description" : "Provide the Master Account Id of the account where programmatic AWS Report user was created",
+	  "Default" : "009988776655"
+	},
+	"UserName" : {
+	  "Type": "String",
+      "Description" : "Provide the User Name in Master Account",
+	  "Default" : "ReportUser"
+	}
+  },
+
+  "Resources" : {
+	
+	"ReportRolePolicy" : {
+		"Type" : "AWS::IAM::ManagedPolicy",
+		"Properties" : {
+			"Description" : "Report role policy allowing to report EC2 instances, volumes and images properties",
+			"Path" : "/",
+			"ManagedPolicyName" : "ReportRolePolicy",
+			"Roles" : [ { "Ref" : "ReportRole" } ],
+			"PolicyDocument" : {
+				"Version":"2012-10-17",
+				"Statement" : {
+				"Effect" : "Allow",
+                  "Action" : [
+					"ec2:DescribeInstances",
+					"ec2:DescribeVolumes",
+					"ec2:DescribeImages"
+				  ],
+                  "Resource" : "*"
+				}
+              }
+            }
+    },
+	
+	"ReportRole" : {
+      "Type" : "AWS::IAM::Role",
+	  "Properties" : {
+	    "RoleName": { "Ref": "UserName" },
+		"AssumeRolePolicyDocument": {
+		  "Version":"2012-10-17",
+          "Statement": [{
+            "Effect"   : "Allow",
+            "Principal": { "AWS" : { "Fn::Join" : [ "", [ 
+				"arn:aws:iam::",
+				{ "Ref" : "MasterAccountId" },
+				":user/",
+				{ "Ref" : "UserName" }
+			] ] }},
+            "Action" : "sts:AssumeRole"
+          },
+		  {
+			"Effect"	: "Deny",
+			"Principal": { "AWS" : { "Fn::Join" : [ "", [ 
+				"arn:aws:iam::",
+				{ "Ref" : "MasterAccountId" },
+				":user/",
+				{ "Ref" : "UserName" }
+			] ] }},
+			"Action" : "sts:AssumeRole",
+			"Condition" : {
+				"NotIpAddress": {
+					"aws:SourceIp": [
+						{ "Ref": "Subnets" }
+					]
+				}
+			}
+		  }
+		  ]
+        }
+		
+	  }
+    }
+  }
+}
+
